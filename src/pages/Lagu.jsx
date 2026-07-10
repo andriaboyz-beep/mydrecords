@@ -113,8 +113,8 @@ export default function Lagu({ db, setDb, user, activeWorkspace }) {
           <h2 className="text-2xl font-bold text-gray-800">Master Data Lagu</h2>
           <p className="text-sm text-gray-500">Kelola data karya cipta, master rekaman, dan metadata lagu</p>
         </div>
-        <button className={`btn flex items-center gap-2 ${showForm ? 'bg-red-500 hover:bg-red-600 text-white' : 'btn-primary'}`} onClick={() => setShowForm(!showForm)}>
-          {showForm ? <Minus size={18} /> : <Plus size={18} />} {showForm ? 'Batal Tambah' : 'Tambah Lagu Baru'}
+        <button className={`btn flex items-center gap-2 ${showForm ? 'btn-danger' : 'btn-primary'}`} onClick={() => setShowForm(!showForm)}>
+          {showForm ? <X size={18} /> : <Plus size={18} />} {showForm ? 'Batal Tambah' : 'Tambah Lagu Baru'}
         </button>
       </div>
 

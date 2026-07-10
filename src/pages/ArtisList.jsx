@@ -250,7 +250,7 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
           <h2 className="text-2xl font-bold text-gray-800">Daftar Artis</h2>
           <p className="text-gray-500">Kelola data artis yang berada di bawah naungan atau kerja sama.</p>
         </div>
-        <button className={`btn ${showForm ? 'bg-red-500 hover:bg-red-600 text-white' : 'btn-primary'}`} onClick={() => {
+        <button className={`btn ${showForm ? 'btn-danger' : 'btn-primary'}`} onClick={() => {
           if (showForm) {
             setShowForm(false);
             setEditingId(null);
@@ -259,7 +259,7 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
             setShowForm(true);
           }
         }}>
-          {showForm ? <Minus size={18} /> : <Plus size={18} />} {showForm ? 'Batal' : 'Tambah Artis'}
+          {showForm ? <X size={18} /> : <Plus size={18} />} {showForm ? 'Batal' : 'Tambah Artis'}
         </button>
       </div>
 

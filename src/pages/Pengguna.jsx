@@ -84,8 +84,8 @@ export default function Pengguna({ db, setDb }) {
           <h2 className="text-2xl font-bold text-gray-800">Manajemen Pengguna</h2>
           <p className="text-gray-500">Kelola akun staf dan hak akses sistem.</p>
         </div>
-        <button className={`btn flex items-center gap-2 ${showForm ? 'bg-red-500 hover:bg-red-600 text-white' : 'btn-primary'}`} onClick={toggleForm}>
-          {showForm ? <Minus size={18} /> : <Plus size={18} />} {showForm ? 'Batal' : 'Tambah Pengguna'}
+        <button className={`btn flex items-center gap-2 ${showForm ? 'btn-danger' : 'btn-primary'}`} onClick={toggleForm}>
+          {showForm ? <X size={18} /> : <Plus size={18} />} {showForm ? 'Batal' : 'Tambah Pengguna'}
         </button>
       </div>
 
