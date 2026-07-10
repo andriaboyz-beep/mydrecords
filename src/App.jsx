@@ -196,7 +196,7 @@ function App() {
     setActiveMenu('dashboard');
   };
 
-  // Auto Logout after 5 minutes (300000 ms) of inactivity
+  // Auto Logout after 3 minutes (180000 ms) of inactivity
   useEffect(() => {
     let timeoutId;
 
@@ -205,8 +205,8 @@ function App() {
       if (currentUser) {
         timeoutId = setTimeout(() => {
           handleLogout();
-          alert('Sesi Anda telah berakhir karena tidak ada aktivitas selama 5 menit. Silakan login kembali.');
-        }, 300000);
+          alert('Sesi Anda telah berakhir karena tidak ada aktivitas selama 3 menit. Silakan login kembali.');
+        }, 180000);
       }
     };
 
