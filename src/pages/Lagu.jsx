@@ -74,7 +74,7 @@ export default function Lagu({ db, setDb, user, activeWorkspace }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     const newSong = {
-      id: `LGU-${String(db.lagu.length + 1).padStart(3, '0')}`,
+      id: `LGU-${Date.now()}`,
       status: 'Proses Perekaman',
       createdBy: user?.id,
       labelId: activeWorkspace,

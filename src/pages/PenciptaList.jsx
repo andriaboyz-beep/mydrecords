@@ -29,7 +29,7 @@ export default function PenciptaList({ db, setDb, onNavigate, user, activeWorksp
       }));
     } else {
       const newPencipta = {
-        id: `PCT-${String(db.pencipta.length + 1).padStart(3, '0')}`,
+        id: `PCT-${Date.now()}`,
         createdBy: user?.id,
         labelId: activeWorkspace,
         ...formData

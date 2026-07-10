@@ -29,7 +29,7 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
       }));
     } else {
       const newArtis = {
-        id: `ART-${String(db.artis.length + 1).padStart(3, '0')}`,
+        id: `ART-${Date.now()}`,
         createdBy: user?.id,
         labelId: activeWorkspace,
         ...formData

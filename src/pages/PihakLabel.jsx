@@ -39,7 +39,7 @@ export default function PihakLabel({ db, setDb, user, activeWorkspace }) {
     } else {
       // Mode Tambah Baru
       const newLabel = {
-        id: `LBL-${String(currentList.length + 1).padStart(3, '0')}`,
+        id: `LBL-${Date.now()}`,
         createdBy: user?.id,
         labelId: activeWorkspace, // Link this partner to the active workspace
         ...formData

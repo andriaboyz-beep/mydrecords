@@ -56,7 +56,7 @@ export default function Pengguna({ db, setDb }) {
       setDb(prev => ({ ...prev, pengguna: updatedUsers }));
     } else {
       const newUser = {
-        id: `USR-${String(displayedUsers.length + 1).padStart(3, '0')}`,
+        id: `USR-${Date.now()}`,
         ...formData,
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random&color=fff`
       };
