@@ -196,6 +196,33 @@ function App() {
     setActiveMenu('dashboard');
   };
 
+  // Auto Logout after 5 minutes (300000 ms) of inactivity
+  useEffect(() => {
+    let timeoutId;
+
+    const resetTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (currentUser) {
+        timeoutId = setTimeout(() => {
+          handleLogout();
+          alert('Sesi Anda telah berakhir karena tidak ada aktivitas selama 5 menit. Silakan login kembali.');
+        }, 300000);
+      }
+    };
+
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    
+    if (currentUser) {
+      events.forEach(e => document.addEventListener(e, resetTimer));
+      resetTimer();
+    }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      events.forEach(e => document.removeEventListener(e, resetTimer));
+    };
+  }, [currentUser]);
+
   const handleNavigate = (menu) => {
     if (menu === 'kontrak') {
       // Clear data if we're explicitly navigating to a new contract (not via edit draft)
