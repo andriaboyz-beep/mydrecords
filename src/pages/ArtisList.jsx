@@ -319,7 +319,11 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
                   onChange={(e) => {
                     const file = e.target.files[0];
                     if (file) {
-                      setFormData(prev => ({ ...prev, fotoProfile: URL.createObjectURL(file) }));
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setFormData(prev => ({ ...prev, fotoProfile: reader.result }));
+                      };
+                      reader.readAsDataURL(file);
                     }
                   }}
                 />

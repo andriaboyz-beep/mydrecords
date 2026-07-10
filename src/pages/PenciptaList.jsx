@@ -47,7 +47,11 @@ export default function PenciptaList({ db, setDb, onNavigate, user, activeWorksp
   const handleFotoUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setFormData(prev => ({ ...prev, fotoProfile: URL.createObjectURL(file) }));
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData(prev => ({ ...prev, fotoProfile: reader.result }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleKTPScan = async (e) => {
