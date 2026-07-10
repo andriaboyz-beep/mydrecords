@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Plus, Search, MoreVertical, CheckCircle2, ScanFace, Loader2 } from 'lucide-react';
+import { Users, Plus, Minus, Search, MoreVertical, CheckCircle2, ScanFace, Loader2, X } from 'lucide-react';
 import { API_URL } from '../api';
 
 export default function PenciptaList({ db, setDb, onNavigate, user, activeWorkspace }) {
@@ -244,7 +244,7 @@ export default function PenciptaList({ db, setDb, onNavigate, user, activeWorksp
           <h2 className="text-2xl font-bold text-gray-800">Daftar Pencipta</h2>
           <p className="text-gray-500">Kelola data pencipta lagu / komposer yang terdaftar.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => {
+        <button className={`btn ${showForm ? 'bg-red-500 hover:bg-red-600 text-white' : 'btn-primary'}`} onClick={() => {
           if (showForm) {
             setShowForm(false);
             setEditingId(null);
@@ -253,7 +253,7 @@ export default function PenciptaList({ db, setDb, onNavigate, user, activeWorksp
             setShowForm(true);
           }
         }}>
-          <Plus size={18} /> {showForm ? 'Batal' : 'Tambah Pencipta'}
+          {showForm ? <Minus size={18} /> : <Plus size={18} />} {showForm ? 'Batal' : 'Tambah Pencipta'}
         </button>
       </div>
 

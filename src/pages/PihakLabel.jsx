@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Briefcase, Plus, Search, MoreVertical, Building } from 'lucide-react';
+import { Briefcase, Plus, Minus, Search, MoreVertical, Building } from 'lucide-react';
 
 export default function PihakLabel({ db, setDb, user, activeWorkspace }) {
   const [showForm, setShowForm] = useState(false);
@@ -81,11 +81,11 @@ export default function PihakLabel({ db, setDb, user, activeWorkspace }) {
           <h2 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Pihak / Label</h2>
           <p style={{ color: 'var(--text-muted)' }}>Kelola entitas perusahaan dan mitra kerja sama.</p>
         </div>
-        <button className="btn btn-primary flex items-center gap-2" onClick={() => {
+        <button className={`btn flex items-center gap-2 ${showForm ? 'bg-red-500 hover:bg-red-600 text-white' : 'btn-primary'}`} onClick={() => {
           setShowForm(!showForm);
           if(showForm) setFormData({ name: '', alias: '', type: 'Label Rekaman', status: 'Aktif' });
         }}>
-          <Plus size={18} /> {showForm ? 'Batal' : 'Tambah Mitra Baru'}
+          {showForm ? <Minus size={18} /> : <Plus size={18} />} {showForm ? 'Batal' : 'Tambah Mitra Baru'}
         </button>
       </div>
 

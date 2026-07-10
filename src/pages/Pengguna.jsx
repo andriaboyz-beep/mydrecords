@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserCog, Plus, Search, ShieldCheck } from 'lucide-react';
+import { UserCog, Plus, Minus, Search, ShieldCheck } from 'lucide-react';
 
 const dummyUsers = [
   { id: 'usr-1', name: 'Andi Pratama', email: 'andi@mydrecords.com', role: 'Administrator', status: 'Aktif', avatar: 'https://ui-avatars.com/api/?name=Andi+Pratama&background=6366f1&color=fff' },
@@ -84,8 +84,8 @@ export default function Pengguna({ db, setDb }) {
           <h2 className="text-2xl font-bold text-gray-800">Manajemen Pengguna</h2>
           <p className="text-gray-500">Kelola akun staf dan hak akses sistem.</p>
         </div>
-        <button className="btn btn-primary flex items-center gap-2" onClick={toggleForm}>
-          <Plus size={18} /> {showForm ? 'Batal' : 'Tambah Pengguna'}
+        <button className={`btn flex items-center gap-2 ${showForm ? 'bg-red-500 hover:bg-red-600 text-white' : 'btn-primary'}`} onClick={toggleForm}>
+          {showForm ? <Minus size={18} /> : <Plus size={18} />} {showForm ? 'Batal' : 'Tambah Pengguna'}
         </button>
       </div>
 
