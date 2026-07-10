@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { Users, Plus, Search, MoreVertical, CheckCircle2, ScanFace, Loader2, X } from 'lucide-react';
+import { API_URL } from '../api';
 
 export default function ArtisList({ db, setDb, user, activeWorkspace }) {
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [previewKtpImage, setPreviewKtpImage] = useState(null);
   const [selectedArtis, setSelectedArtis] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -19,17 +22,25 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const newArtis = {
-      id: `ART-${String(db.artis.length + 1).padStart(3, '0')}`,
-      createdBy: user?.id,
-      labelId: activeWorkspace,
-      ...formData
-    };
-    setDb(prev => ({
-      ...prev,
-      artis: [...prev.artis, newArtis]
-    }));
+    if (editingId) {
+      setDb(prev => ({
+        ...prev,
+        artis: prev.artis.map(art => art.id === editingId ? { ...art, ...formData } : art)
+      }));
+    } else {
+      const newArtis = {
+        id: `ART-${String(db.artis.length + 1).padStart(3, '0')}`,
+        createdBy: user?.id,
+        labelId: activeWorkspace,
+        ...formData
+      };
+      setDb(prev => ({
+        ...prev,
+        artis: [...prev.artis, newArtis]
+      }));
+    }
     setShowForm(false);
+    setEditingId(null);
     setFormData({ name: '', alias: '', ktp: '', alamat: '', bank: '', norek: '', atasNama: '', ktpFile: null, fotoProfile: null });
   };
 
@@ -37,17 +48,47 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Set preview image first
-    setFormData(prev => ({ ...prev, ktpFile: URL.createObjectURL(file) }));
     setIsScanning(true);
 
     try {
-      const Tesseract = (await import('tesseract.js')).default;
-      const result = await Tesseract.recognize(file, 'ind', {
-        logger: m => console.log(m)
+      // Read file and compress to base64 via Canvas to bypass 1MB Nginx limit
+      const base64Image = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let targetWidth = 1200; // optimal for OCR
+            let scale = img.width > targetWidth ? targetWidth / img.width : 1;
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+            
+            // Save original or compressed for preview persistence
+            setFormData(prev => ({ ...prev, ktpFile: compressedBase64 }));
+            resolve(compressedBase64);
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
       });
-      
-      const text = result.data.text.toUpperCase();
+
+      // Send to server for OCR processing
+      const response = await fetch(`${API_URL}/scan_ktp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64Image })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'OCR failed');
+      }
+
+      const data = await response.json();
+      const text = data.text || '';
       const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
       
       let parsedNik = '';
@@ -67,18 +108,44 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
       }
 
       // Find NIK
-      const nikLine = lines.find(l => l.match(/\d{16}/));
-      if (nikLine) parsedNik = nikLine.match(/\d{16}/)[0];
+      const digitsLine = lines.map(l => l.replace(/\D/g, '')).find(d => d.length >= 12);
+      if (digitsLine) {
+        parsedNik = digitsLine.substring(0, 16);
+      }
       
       // Find Nama
-      const namaIdx = lines.findIndex(l => l.includes('NAMA'));
+      const namaIdx = lines.findIndex(l => l.toUpperCase().replace(/\s/g, '').includes('NAMA'));
       if (namaIdx !== -1) {
-        const parts = lines[namaIdx].split(':');
-        if (parts.length > 1 && parts[1].trim().length > 2) {
-          parsedNama = parts[1].replace(/[^A-Z .\-]/g, '').trim();
-        } else if (namaIdx + 1 < lines.length) {
-          parsedNama = lines[namaIdx+1].replace(/[^A-Z .\-]/g, '').trim();
+        let line = lines[namaIdx];
+        let afterNama = '';
+        if (line.includes(':')) {
+          afterNama = line.split(':').slice(1).join(':').trim();
+        } else {
+          afterNama = line.replace(/.*N\s*A\s*M\s*A/i, '').replace(/^[^A-Za-z]*/, '').trim();
         }
+        
+        if (afterNama.length > 2) {
+          parsedNama = afterNama.replace(/[^A-Za-z .\-']/g, '').trim().toUpperCase();
+        } else if (namaIdx + 1 < lines.length) {
+          parsedNama = lines[namaIdx+1].replace(/[^A-Za-z .\-']/g, '').trim().toUpperCase();
+        }
+      }
+
+      // Fallback for Nama: line after NIK
+      if (!parsedNama && parsedNik) {
+        const nikIdxForNama = lines.findIndex(l => l.replace(/\D/g, '').includes(parsedNik));
+        if (nikIdxForNama !== -1 && nikIdxForNama + 1 < lines.length) {
+          let possibleNama = lines[nikIdxForNama + 1];
+          if (!possibleNama.toUpperCase().includes('LAHIR') && !possibleNama.toUpperCase().includes('TEMPAT')) {
+             parsedNama = possibleNama.replace(/[^A-Za-z .\-']/g, '').trim().toUpperCase();
+          }
+        }
+      }
+
+      // Clean up NAMA prefix if any
+      if (parsedNama) {
+         parsedNama = parsedNama.replace(/^N\s*A\s*M\s*A\s*/i, '').trim();
+         parsedNama = parsedNama.replace(/^:\s*/, '').trim();
       }
       
       // Find Jalan/Alamat
@@ -89,10 +156,10 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
         if (line.includes(':')) {
            const parts = line.split(':');
            if (parts.length > 1 && parts[1].trim().length > 2) {
-              jalan = parts[1].replace(/[^A-Z0-9 .\-,/]/g, '').trim();
+              jalan = parts[1].replace(/[^A-Za-z0-9 .\-,/]/g, '').trim();
            }
         } else {
-           const afterAlamat = line.replace(/.*A\s*L\s*A\s*M\s*A\s*T/i, '').replace(/[^A-Z0-9 .\-,/]/g, '').trim();
+           const afterAlamat = line.replace(/.*A\s*L\s*A\s*M\s*A\s*T/i, '').replace(/[^A-Za-z0-9 .\-,/]/g, '').trim();
            if (afterAlamat.length > 2) {
               jalan = afterAlamat;
            }
@@ -100,7 +167,7 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
         
         if (!jalan && alamatIdx + 1 < lines.length) {
           if (!/RT|RW|RAW|KEL|DESA|KEC/i.test(lines[alamatIdx+1])) {
-             jalan = lines[alamatIdx+1].replace(/[^A-Z0-9 .\-,/]/g, '').trim();
+             jalan = lines[alamatIdx+1].replace(/[^A-Za-z0-9 .\-,/]/g, '').trim();
           }
         }
       }
@@ -111,7 +178,7 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
          if (rtIdx > 0) {
             const lineAbove = lines[rtIdx - 1];
             if (!/KELAMIN|AGAMA|STATUS|NAMA|LAHIR|KECAMATAN|PROVINSI|KOTA/i.test(lineAbove)) {
-               let fallbackJalan = lineAbove.replace(/.*A\s*L\s*A\s*M\s*A\s*T/i, '').replace(/[^A-Z0-9 .\-,/]/g, '').trim();
+               let fallbackJalan = lineAbove.replace(/.*A\s*L\s*A\s*M\s*A\s*T/i, '').replace(/[^A-Za-z0-9 .\-,/]/g, '').trim();
                fallbackJalan = fallbackJalan.replace(/^[.:,\-\s]+/, '');
                if (fallbackJalan.length > 2) jalan = fallbackJalan;
             }
@@ -120,7 +187,7 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
 
       // Find RT/RW
       let rtRw = '';
-      const rtLine = lines.find(l => /RT.*RW|RAW|RTI|\d{2,3}[\/|]\d{2,3}/i.test(l) && !l.includes('ALAMAT'));
+      const rtLine = lines.find(l => /RT.*RW|RAW|RTI|\d{2,3}[\/|]\d{2,3}/i.test(l) && !l.toUpperCase().includes('ALAMAT'));
       if (rtLine) {
         const nums = rtLine.replace(/[^0-9/]/g, '').trim();
         if (nums.includes('/')) {
@@ -134,18 +201,18 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
 
       // Find Kelurahan / Desa
       let kel = '';
-      const kelLine = lines.find(l => /KEL|DESA|OESA/i.test(l) && !/KEC/.test(l));
+      const kelLine = lines.find(l => /KEL|DESA|OESA/i.test(l) && !/KEC/i.test(l));
       if (kelLine) {
-        let val = kelLine.split(':').pop().replace(/[^A-Z \-]/g, '').trim();
+        let val = kelLine.split(':').pop().replace(/[^A-Za-z \-]/g, '').trim();
         val = val.replace(/KEL.*DESA|KEL|DESA|OESA/ig, '').trim();
         if (val) kel = `Desa ${val}`;
       }
 
       // Find Kecamatan
       let kec = '';
-      const kecLine = lines.find(l => /KEC|KECAMATAN/i.test(l) && !/KEL/.test(l));
+      const kecLine = lines.find(l => /KEC|KECAMATAN/i.test(l) && !/KEL/i.test(l));
       if (kecLine) {
-        let val = kecLine.split(':').pop().replace(/[^A-Z \-]/g, '').trim();
+        let val = kecLine.split(':').pop().replace(/[^A-Za-z \-]/g, '').trim();
         val = val.replace(/KECAMATAN|KEC/ig, '').trim();
         if (val) kec = `Kec. ${val}`;
       }
@@ -154,7 +221,8 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
         .filter(Boolean)
         .join(', ')
         .replace(/\s+/g, ' ') 
-        .replace(/, ,/g, ',');
+        .replace(/, ,/g, ',')
+        .toUpperCase();
 
       setFormData(prev => ({
         ...prev,
@@ -182,14 +250,22 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
           <h2 className="text-2xl font-bold text-gray-800">Daftar Artis</h2>
           <p className="text-gray-500">Kelola data artis yang berada di bawah naungan atau kerja sama.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-          <Plus size={18} /> {showForm ? 'Batal Tambah' : 'Tambah Artis'}
+        <button className="btn btn-primary" onClick={() => {
+          if (showForm) {
+            setShowForm(false);
+            setEditingId(null);
+            setFormData({ name: '', alias: '', ktp: '', alamat: '', bank: '', norek: '', atasNama: '', ktpFile: null, fotoProfile: null });
+          } else {
+            setShowForm(true);
+          }
+        }}>
+          <Plus size={18} /> {showForm ? 'Batal' : 'Tambah Artis'}
         </button>
       </div>
 
       {showForm && (
         <div className="card mb-6 p-6">
-          <h3 className="text-lg font-bold mb-4 border-b pb-2">Tambah Artis Baru</h3>
+          <h3 className="text-lg font-bold mb-4 border-b pb-2">{editingId ? 'Edit Data Artis' : 'Tambah Artis Baru'}</h3>
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="form-group">
@@ -299,9 +375,9 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
               <div className="space-y-2 text-sm text-gray-600 border-t pt-4 mt-2">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Dokumen:</span>
-                  <a href={art.ktpFile} target="_blank" rel="noreferrer" className="text-primary text-xs font-bold hover:underline flex items-center gap-1">
+                  <button onClick={() => setPreviewKtpImage(art.ktpFile)} className="text-primary text-xs font-bold hover:underline flex items-center gap-1">
                     <CheckCircle2 size={12} /> Lihat KTP
-                  </a>
+                  </button>
                 </div>
               </div>
             )}
@@ -354,22 +430,93 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
                    <p className="profile-info-sub">a.n {selectedArtis.atasNama || '-'}</p>
                 </div>
                 {selectedArtis.ktpFile && (
-                   <div className="profile-info-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backgroundColor: '#ecfdf5', borderColor: '#a7f3d0' }}>
+                   <button 
+                     onClick={() => setPreviewKtpImage(selectedArtis.ktpFile)}
+                     className="profile-info-card" 
+                     style={{ width: '100%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backgroundColor: '#ecfdf5', borderColor: '#a7f3d0' }}
+                   >
                       <p className="profile-info-label" style={{ margin: 0, color: '#059669', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
-                        <CheckCircle2 size={18} /> Dokumen KTP
+                        <CheckCircle2 size={18} /> Lihat KTP
                       </p>
-                   </div>
+                   </button>
                 )}
               </div>
               
               {/* Large Bottom Button */}
-              <button 
-                onClick={() => setSelectedArtis(null)}
-                className="profile-close-btn"
-              >
-                Tutup Profil
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', marginTop: '1.5rem' }}>
+                <button 
+                  onClick={() => {
+                    setFormData({
+                      name: selectedArtis.name || '',
+                      alias: selectedArtis.alias || '',
+                      ktp: selectedArtis.ktp || '',
+                      alamat: selectedArtis.alamat || '',
+                      bank: selectedArtis.bank || '',
+                      norek: selectedArtis.norek || '',
+                      atasNama: selectedArtis.atasNama || '',
+                      ktpFile: selectedArtis.ktpFile || null,
+                      fotoProfile: selectedArtis.fotoProfile || null
+                    });
+                    setEditingId(selectedArtis.id);
+                    setShowForm(true);
+                    setSelectedArtis(null);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="btn btn-outline-primary"
+                  style={{ width: '100%', padding: '0.75rem', fontWeight: 'bold', borderRadius: '0.75rem', borderWidth: '2px', borderStyle: 'solid' }}
+                >
+                  Edit Data Artis
+                </button>
+                <button 
+                  onClick={() => setSelectedArtis(null)}
+                  className="profile-close-btn"
+                >
+                  Tutup Profil
+                </button>
+              </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Preview KTP (Modern Success Style) */}
+      {previewKtpImage && (
+        <div className="modal-overlay" onClick={() => setPreviewKtpImage(null)}>
+          <div 
+            className="profile-modal" 
+            style={{ maxWidth: '500px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top Purple Header with Icon */}
+            <div style={{ backgroundColor: 'var(--primary)', height: '7rem', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ position: 'absolute', bottom: '-2rem', backgroundColor: 'white', padding: '0.5rem', borderRadius: '50%', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                <div style={{ backgroundColor: '#10b981', width: '3.5rem', height: '3.5rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CheckCircle2 size={32} color="white" />
+                </div>
+              </div>
+            </div>
+            
+            {/* White Body with Image */}
+            <div style={{ paddingTop: '3rem', paddingBottom: '1.5rem', paddingLeft: '1.5rem', paddingRight: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+              <h3 style={{ fontWeight: 800, fontSize: '1.5rem', color: 'var(--text-main)', marginBottom: '0.25rem' }}>Preview KTP</h3>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>Dokumen terlampir untuk artis ini</p>
+              
+              <div style={{ width: '100%', backgroundColor: 'var(--bg-main)', borderRadius: '0.75rem', overflow: 'hidden', border: '2px dashed var(--border-color)' }}>
+                <img 
+                  src={previewKtpImage} 
+                  alt="Preview KTP" 
+                  style={{ width: '100%', maxHeight: '45vh', objectFit: 'contain', display: 'block' }}
+                />
+              </div>
+            </div>
+
+            {/* Bottom Purple Button */}
+            <button 
+              onClick={() => setPreviewKtpImage(null)}
+              style={{ width: '100%', backgroundColor: 'var(--primary)', color: 'white', fontWeight: 800, fontSize: '1.125rem', padding: '1rem', border: 'none', cursor: 'pointer' }}
+            >
+              Oke
+            </button>
           </div>
         </div>
       )}

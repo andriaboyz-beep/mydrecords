@@ -18,6 +18,38 @@ import {
 export default function KontrakBaru({ onBack, contractData, setContractData, db, setDb, user, activeWorkspace }) {
   const [activeStep, setActiveStep] = useState(1);
   const [successModal, setSuccessModal] = useState({ show: false, message: '' });
+  const [hasAutoFilled, setHasAutoFilled] = useState(false);
+
+  // Auto-generate nomorKontrak for new contracts
+  useEffect(() => {
+    if (!contractData.id && !contractData.nomorKontrak && !hasAutoFilled) {
+      let maxNum = 49;
+      db.kontrak.forEach(k => {
+        if (k.nomorKontrak) {
+          const match = k.nomorKontrak.match(/^(\d{4})\//);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (!isNaN(num) && num > maxNum) {
+              maxNum = num;
+            }
+          }
+        }
+      });
+      
+      const nextNum = String(maxNum + 1).padStart(4, '0');
+      const romanMonths = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+      const currentMonth = romanMonths[new Date().getMonth()];
+      const currentYear = new Date().getFullYear();
+      
+      const nextNomorKontrak = `${nextNum}/PKS/RSA/MYDR/${currentMonth}/${currentYear}`;
+      
+      setContractData(prev => ({
+        ...prev,
+        nomorKontrak: nextNomorKontrak
+      }));
+      setHasAutoFilled(true);
+    }
+  }, [contractData.id, contractData.nomorKontrak, db.kontrak, setContractData, hasAutoFilled]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(

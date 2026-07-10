@@ -4,7 +4,8 @@ import html2pdf from 'html2pdf.js';
 
 export default function Laporan({ db }) {
   const totalKontrak = db?.kontrak?.length || 0;
-  const totalOrang = (db?.artis?.length || 0) + (db?.pencipta?.length || 0);
+  const totalArtis = db?.artis?.length || 0;
+  const totalPencipta = db?.pencipta?.length || 0;
   const totalLagu = db?.lagu?.length || 0;
   const handleExportPDF = () => {
     const element = document.getElementById('report-content');
@@ -33,15 +34,12 @@ export default function Laporan({ db }) {
       </div>
 
       <div id="report-content">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <div className="card p-5 bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
           <div className="flex justify-between items-start mb-4">
             <div className="bg-white/20 p-2 rounded-lg">
               <FileText size={24} />
             </div>
-            <span className="flex items-center gap-1 text-sm bg-white/20 px-2 py-1 rounded-full">
-              <TrendingUp size={14} /> +12.5%
-            </span>
           </div>
           <p className="text-white/80 font-medium mb-1">Total Kontrak Tahun Ini</p>
           <h3 className="text-4xl font-bold">{totalKontrak}</h3>
@@ -52,12 +50,19 @@ export default function Laporan({ db }) {
             <div className="bg-white/20 p-2 rounded-lg">
               <Users size={24} />
             </div>
-            <span className="flex items-center gap-1 text-sm bg-white/20 px-2 py-1 rounded-full">
-              <TrendingUp size={14} /> +5.2%
-            </span>
           </div>
-          <p className="text-white/80 font-medium mb-1">Artis & Pencipta Aktif</p>
-          <h3 className="text-4xl font-bold">{totalOrang}</h3>
+          <p className="text-white/80 font-medium mb-1">Total Artis Aktif</p>
+          <h3 className="text-4xl font-bold">{totalArtis}</h3>
+        </div>
+
+        <div className="card p-5 bg-gradient-to-br from-blue-500 to-cyan-600 text-white">
+          <div className="flex justify-between items-start mb-4">
+            <div className="bg-white/20 p-2 rounded-lg">
+              <Users size={24} />
+            </div>
+          </div>
+          <p className="text-white/80 font-medium mb-1">Total Pencipta Aktif</p>
+          <h3 className="text-4xl font-bold">{totalPencipta}</h3>
         </div>
 
         <div className="card p-5 bg-gradient-to-br from-amber-500 to-orange-600 text-white">

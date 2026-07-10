@@ -134,7 +134,19 @@ function createTables() {
       updatedAt TEXT,
       
       FOREIGN KEY (labelId) REFERENCES label(id) ON DELETE CASCADE
-    )`);
+    )`, (err) => {
+      if (!err) {
+        // Add new columns if they don't exist
+        const columnsToAdd = [
+          'rekening_nama', 'rekening_nomor', 'rekening_bank',
+          'pihak2_hp', 'pihak2_email', 'pihak2_alias',
+          'saksi1', 'saksi2'
+        ];
+        columnsToAdd.forEach(col => {
+          db.run(`ALTER TABLE kontrak ADD COLUMN ${col} TEXT`, () => {}); // ignore error if column exists
+        });
+      }
+    });
 
     // Aktivitas
     db.run(`CREATE TABLE IF NOT EXISTS aktivitas (
@@ -145,6 +157,19 @@ function createTables() {
       detail TEXT,
       timestamp TEXT
     )`);
+    
+    // Add KTP Columns to artis and pencipta
+    const ktpColumns = [
+      'tempatLahir', 'tanggalLahir', 'jenisKelamin', 'golonganDarah',
+      'rtRw', 'kelDesa', 'kecamatan', 'agama', 'statusPerkawinan',
+      'pekerjaan', 'kewarganegaraan'
+    ];
+    
+    ['artis', 'pencipta'].forEach(tableName => {
+      ktpColumns.forEach(col => {
+        db.run(`ALTER TABLE ${tableName} ADD COLUMN ${col} TEXT`, () => {}); // ignore if column exists
+      });
+    });
     
     console.log('Tables initialized');
   });
