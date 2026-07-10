@@ -14,7 +14,7 @@ export default function Pengaturan({ db, setDb }) {
     <div className="page-container p-6">
       <div className="page-header mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Pengaturan Sistem</h2>
-        <p className="text-gray-500">Konfigurasi preferensi aplikasi KontrakKu.</p>
+        <p className="text-gray-500">Konfigurasi preferensi aplikasi MUSIORA.</p>
       </div>
 
       <div className="settings-layout">

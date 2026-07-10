@@ -12,7 +12,7 @@ export default function Laporan({ db }) {
     if (element) {
       const opt = {
         margin:       0.5,
-        filename:     'laporan-kontrakku.pdf',
+        filename:     'laporan-musiora.pdf',
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true },
         jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
