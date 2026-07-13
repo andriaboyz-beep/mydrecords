@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Users, Plus, Minus, Search, MoreVertical, CheckCircle2, ScanFace, Loader2, X } from 'lucide-react';
-import { API_URL } from '../api';
+import React, { useState, useEffect } from 'react';
+import { Users, Plus, Minus, Search, MoreVertical, CheckCircle2, ScanFace, Loader2, X, Trash2 } from 'lucide-react';
+import { API_URL } from '../../api';
 
 export default function ArtisList({ db, setDb, user, activeWorkspace }) {
   const [showForm, setShowForm] = useState(false);
@@ -8,6 +8,7 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
   const [isScanning, setIsScanning] = useState(false);
   const [previewKtpImage, setPreviewKtpImage] = useState(null);
   const [selectedArtis, setSelectedArtis] = useState(null);
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState({ show: false, artisId: null });
   const [formData, setFormData] = useState({
     name: '',
     alias: '',
@@ -20,18 +21,46 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
     fotoProfile: null
   });
 
+  // Load draft from localStorage on mount/showForm
+  useEffect(() => {
+    if (showForm && !editingId) {
+      const saved = localStorage.getItem('draft_artis_form');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Object.values(parsed).some(v => v)) {
+            setFormData(prev => ({ ...prev, ...parsed }));
+          }
+        } catch (e) {
+          console.error('Failed to parse draft', e);
+        }
+      }
+    }
+  }, [showForm, editingId]);
+
+  // Save to localStorage whenever formData changes (only for new entries)
+  useEffect(() => {
+    if (showForm && !editingId) {
+      const dataToSave = { ...formData };
+      delete dataToSave.ktpFile;
+      delete dataToSave.fotoProfile;
+      localStorage.setItem('draft_artis_form', JSON.stringify(dataToSave));
+    }
+  }, [formData, showForm, editingId]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (editingId) {
       setDb(prev => ({
         ...prev,
-        artis: prev.artis.map(art => art.id === editingId ? { ...art, ...formData } : art)
+        artis: prev.artis.map(art => art.id === editingId ? { ...art, ...formData, status: 'active' } : art)
       }));
     } else {
       const newArtis = {
         id: `ART-${Date.now()}`,
         createdBy: user?.id,
         labelId: activeWorkspace,
+        status: 'active',
         ...formData
       };
       setDb(prev => ({
@@ -42,6 +71,32 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
     setShowForm(false);
     setEditingId(null);
     setFormData({ name: '', alias: '', ktp: '', alamat: '', bank: '', norek: '', atasNama: '', ktpFile: null, fotoProfile: null });
+    localStorage.removeItem('draft_artis_form');
+  };
+
+  const handleSaveDraft = () => {
+    if (editingId) {
+      setDb(prev => ({
+        ...prev,
+        artis: prev.artis.map(art => art.id === editingId ? { ...art, ...formData, status: 'draft' } : art)
+      }));
+    } else {
+      const newArtis = {
+        id: `ART-${Date.now()}`,
+        createdBy: user?.id,
+        labelId: activeWorkspace,
+        status: 'draft',
+        ...formData
+      };
+      setDb(prev => ({
+        ...prev,
+        artis: [...prev.artis, newArtis]
+      }));
+    }
+    setShowForm(false);
+    setEditingId(null);
+    setFormData({ name: '', alias: '', ktp: '', alamat: '', bank: '', norek: '', atasNama: '', ktpFile: null, fotoProfile: null });
+    localStorage.removeItem('draft_artis_form');
   };
 
   const handleKTPScan = async (e) => {
@@ -250,23 +305,35 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
           <h2 className="text-2xl font-bold text-gray-800">Daftar Artis</h2>
           <p className="text-gray-500">Kelola data artis yang berada di bawah naungan atau kerja sama.</p>
         </div>
-        <button className={`btn ${showForm ? 'btn-danger' : 'btn-primary'}`} onClick={() => {
-          if (showForm) {
-            setShowForm(false);
-            setEditingId(null);
-            setFormData({ name: '', alias: '', ktp: '', alamat: '', bank: '', norek: '', atasNama: '', ktpFile: null, fotoProfile: null });
-          } else {
-            setShowForm(true);
-          }
-        }}>
-          {showForm ? <X size={18} /> : <Plus size={18} />} {showForm ? 'Batal' : 'Tambah Artis'}
-        </button>
+        <div className="flex gap-2">
+          {showForm && (
+            <>
+              <button type="button" onClick={handleSaveDraft} className="btn bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">
+                Simpan Draft
+              </button>
+              <button type="submit" form="artisForm" className="btn btn-primary">
+                Simpan Artis
+              </button>
+            </>
+          )}
+          <button className={`btn ${showForm ? 'btn-danger' : 'btn-primary'}`} onClick={() => {
+            if (showForm) {
+              setShowForm(false);
+              setEditingId(null);
+              setFormData({ name: '', alias: '', ktp: '', alamat: '', bank: '', norek: '', atasNama: '', ktpFile: null, fotoProfile: null });
+            } else {
+              setShowForm(true);
+            }
+          }}>
+            {showForm ? <X size={18} /> : <Plus size={18} />} {showForm ? 'Batal' : 'Tambah Artis'}
+          </button>
+        </div>
       </div>
 
       {showForm && (
         <div className="card mb-6 p-6">
           <h3 className="text-lg font-bold mb-4 border-b pb-2">{editingId ? 'Edit Data Artis' : 'Tambah Artis Baru'}</h3>
-          <form onSubmit={handleSubmit}>
+          <form id="artisForm" onSubmit={handleSubmit}>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="form-group">
                 <label className="font-bold">Nama Lengkap (Sesuai KTP)</label>
@@ -345,9 +412,6 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
                 </div>
               </div>
             </div>
-            <div className="flex justify-end">
-              <button type="submit" className="btn btn-primary">Simpan Artis</button>
-            </div>
           </form>
         </div>
       )}
@@ -359,32 +423,99 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div style={{ display: 'flex', flexDirection: 'column', borderTop: '1px solid #f3f4f6', marginTop: '16px' }}>
         {db.artis.map(art => (
-          <div key={art.id} className="card p-5 relative group">
-            <div className="flex items-center gap-4 mb-4">
-              <img src={`https://ui-avatars.com/api/?name=${art.alias || art.name}&background=fce7f3&color=db2777`} className="w-14 h-14 rounded-full" alt={art.name} />
-              <div>
-                <h3 
-                  className="font-bold text-lg leading-tight hover:text-primary cursor-pointer transition-colors"
-                  onClick={() => setSelectedArtis(art)}
-                >
-                  {art.name}
-                </h3>
-                <p className="text-sm text-gray-500">{art.alias}</p>
+          <div 
+            key={art.id} 
+            style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'minmax(250px, 3fr) minmax(80px, 1fr) minmax(150px, 2fr) minmax(150px, 2fr) minmax(120px, 1fr) minmax(150px, 2fr)',
+              alignItems: 'center', 
+              padding: '16px', 
+              borderBottom: '1px solid #f3f4f6', 
+              cursor: 'pointer',
+              gap: '16px',
+              backgroundColor: '#ffffff',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
+            onClick={() => setSelectedArtis(art)}
+          >
+            {/* 1. Avatar, Name & Alias */}
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <img 
+                  src={art.fotoProfile || `https://ui-avatars.com/api/?name=${encodeURIComponent(art.alias || art.name || 'Draft')}&background=fce7f3&color=db2777`} 
+                  style={{ width: '48px', height: '48px', borderRadius: '6px', objectFit: 'cover', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
+                  alt={art.name || 'Draft'} 
+                />
               </div>
-            </div>
-            
-            {art.ktpFile && (
-              <div className="space-y-2 text-sm text-gray-600 border-t pt-4 mt-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Dokumen:</span>
-                  <button onClick={() => setPreviewKtpImage(art.ktpFile)} className="text-primary text-xs font-bold hover:underline flex items-center gap-1">
-                    <CheckCircle2 size={12} /> Lihat KTP
-                  </button>
+              <div style={{ marginLeft: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
+                <p style={{ fontSize: '14px', fontWeight: 600, color: '#1f2937', margin: '0 0 4px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {art.name || 'Tanpa Nama'}
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ border: '1px solid #e5e7eb', borderRadius: '4px', padding: '2px 6px', fontSize: '11px', color: '#6b7280', backgroundColor: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {art.alias || 'Belum ada alias'}
+                  </span>
                 </div>
               </div>
-            )}
+            </div>
+
+            {/* 2. Counter */}
+            <div style={{ textAlign: 'center' }}>
+              <span style={{ fontSize: '14px', fontWeight: 500, color: '#4b5563' }}>1</span>
+            </div>
+
+            {/* 3. Date & Location (Left aligned) */}
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <p style={{ fontSize: '14px', color: '#374151', margin: '0 0 2px 0' }}>{art.createdAt ? new Date(art.createdAt).toISOString().split('T')[0] : '2026-07-17'}</p>
+              <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>{art.alamat ? (art.alamat.split(',')[0].length > 15 ? art.alamat.substring(0,15)+'...' : art.alamat.split(',')[0]) : 'Jakarta'}</p>
+            </div>
+
+            {/* NEW: Bank Info */}
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <p style={{ fontSize: '13px', fontWeight: 600, color: '#374151', margin: '0 0 2px 0' }}>{art.bank || '-'}</p>
+              <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>{art.norek || '-'}</p>
+            </div>
+
+            {/* 4. Status */}
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: art.status === 'draft' ? '#eab308' : '#10b981' }}></div>
+                <span style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', color: art.status === 'draft' ? '#ca8a04' : '#10b981' }}>
+                  {art.status === 'draft' ? 'DRAFT' : 'LIVE'}
+                </span>
+              </div>
+            </div>
+
+            {/* 5. Actions */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '20px', color: '#9ca3af' }}>
+              <button 
+                onClick={(e) => { e.stopPropagation(); setSelectedArtis(art); }} 
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit', display: 'flex' }}
+                title="Detail / Edit"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              </button>
+              <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit', display: 'flex' }} onClick={(e) => e.stopPropagation()}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </button>
+              <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit', display: 'flex', opacity: 0.5 }} onClick={(e) => e.stopPropagation()}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+              <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit', display: 'flex', opacity: 0.5 }} onClick={(e) => e.stopPropagation()}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); setDeleteConfirmModal({ show: true, artisId: art.id }); }} 
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#ef4444', display: 'flex' }}
+                title="Hapus"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
           </div>
         ))}
         {db.artis.length === 0 && (
@@ -402,18 +533,21 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
             <div className="profile-modal-body">
               
               {/* Title / Name */}
-              <h3 className="profile-name">{selectedArtis.alias || selectedArtis.name}</h3>
-              <p className="profile-real-name">{selectedArtis.name}</p>
+              <h3 className="profile-name flex items-center justify-center">
+                {selectedArtis.alias || selectedArtis.name || 'Tanpa Nama'}
+                {selectedArtis.status === 'draft' && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full ml-2">Draft</span>}
+              </h3>
+              <p className="profile-real-name">{selectedArtis.name || 'Belum ada nama lengkap'}</p>
 
               {/* Profile Photo */}
               <div className="profile-avatar-container">
                 <img 
-                  src={selectedArtis.fotoProfile || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedArtis.alias || selectedArtis.name)}&background=fce7f3&color=db2777&size=200`} 
+                  src={selectedArtis.fotoProfile || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedArtis.alias || selectedArtis.name || 'Draft')}&background=fce7f3&color=db2777&size=200`} 
                   className="profile-avatar" 
-                  alt={selectedArtis.name} 
+                  alt={selectedArtis.name || 'Draft'} 
                   onError={(e) => {
                     e.target.onerror = null; 
-                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedArtis.alias || selectedArtis.name)}&background=fce7f3&color=db2777&size=200`;
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedArtis.alias || selectedArtis.name || 'Draft')}&background=fce7f3&color=db2777&size=200`;
                   }}
                 />
               </div>
@@ -521,6 +655,51 @@ export default function ArtisList({ db, setDb, user, activeWorkspace }) {
             >
               Oke
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirm Modal */}
+      {deleteConfirmModal.show && (
+        <div className="success-modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="success-modal-content" style={{ maxWidth: '280px' }}>
+            <div className="success-modal-header">
+              <div className="success-modal-icon-container">
+                <div className="success-modal-icon" style={{ backgroundColor: '#ef4444' }}>
+                  <X size={24} strokeWidth={4} />
+                </div>
+              </div>
+            </div>
+            
+            <div className="success-modal-body">
+              <h2 className="success-modal-title">Konfirmasi</h2>
+              <p className="success-modal-text">
+                Apakah Anda yakin ingin menghapus data artis ini?
+              </p>
+            </div>
+            
+            <div style={{ display: 'flex', width: '100%' }}>
+              <button 
+                style={{ flex: 1, backgroundColor: '#9ca3af', color: 'white', borderRight: '1px solid rgba(255,255,255,0.2)' }}
+                className="success-modal-btn"
+                onClick={() => setDeleteConfirmModal({ show: false, artisId: null })}
+              >
+                Batal
+              </button>
+              <button 
+                style={{ flex: 1, backgroundColor: '#ef4444', color: 'white' }}
+                className="success-modal-btn"
+                onClick={() => {
+                  setDb(prev => ({
+                    ...prev,
+                    artis: prev.artis.filter(a => a.id !== deleteConfirmModal.artisId)
+                  }));
+                  setDeleteConfirmModal({ show: false, artisId: null });
+                }}
+              >
+                Hapus
+              </button>
+            </div>
           </div>
         </div>
       )}

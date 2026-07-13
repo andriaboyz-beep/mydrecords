@@ -20,6 +20,33 @@ export default function KontrakBaru({ onBack, contractData, setContractData, db,
   const [successModal, setSuccessModal] = useState({ show: false, message: '' });
   const [hasAutoFilled, setHasAutoFilled] = useState(false);
 
+  // Load draft from localStorage on mount
+  useEffect(() => {
+    if (!contractData.id) {
+      const saved = localStorage.getItem('draft_kontrak_form');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed && Object.keys(parsed).length > 0) {
+            setContractData(prev => ({ ...prev, ...parsed }));
+          }
+        } catch (e) {
+          console.error('Failed to parse contract draft', e);
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Save to localStorage whenever contractData changes (only for new entries)
+  useEffect(() => {
+    if (!contractData.id) {
+      if (Object.values(contractData).some(v => v !== '' && v !== null && v !== undefined)) {
+        localStorage.setItem('draft_kontrak_form', JSON.stringify(contractData));
+      }
+    }
+  }, [contractData]);
+
   // Auto-generate nomorKontrak for new contracts
   useEffect(() => {
     if (!contractData.id && !contractData.nomorKontrak && !hasAutoFilled) {
@@ -137,12 +164,11 @@ export default function KontrakBaru({ onBack, contractData, setContractData, db,
       'pihak1_wakil',
       'pihak2_nama',
       'pihak2_ktp',
-      'pihak2_alamat'
+      'pihak2_alamat',
+      'lagu_judul'
     ];
     
-    if (contractData?.jenisKontrak === 'pencipta') {
-      requiredFields.push('lagu_judul');
-    } else {
+    if (contractData?.jenisKontrak !== 'pencipta') {
       requiredFields.push('pihak2_panggung');
     }
 
@@ -167,6 +193,10 @@ export default function KontrakBaru({ onBack, contractData, setContractData, db,
     
     if (targetStatus === 'Aktif' && !validateForm()) {
       return; // Stop if validation fails
+    }
+
+    if (!contractData.id) {
+      localStorage.removeItem('draft_kontrak_form');
     }
 
     const contractId = contractData.id || `KNT-${Date.now()}`;
@@ -247,6 +277,15 @@ export default function KontrakBaru({ onBack, contractData, setContractData, db,
   const isEditMode = Boolean(contractData?.id);
   const isEditActive = isEditMode && contractData?.status === 'Aktif';
   const formReady = isFormValid();
+
+  const penciptaSongs = {};
+  (db?.kontrak || []).filter(k => k.jenisKontrak === 'pencipta' && k.lagu_judul).forEach(k => {
+    const creator = k.pihak2_nama || 'Unknown Pencipta';
+    if (!penciptaSongs[creator]) {
+      penciptaSongs[creator] = new Set();
+    }
+    penciptaSongs[creator].add(k.lagu_judul);
+  });
 
   return (
     <div className="wizard-container">
@@ -515,45 +554,89 @@ export default function KontrakBaru({ onBack, contractData, setContractData, db,
             </div>
           </div>
 
-          {/* SECTION FOR SONG DETAILS (Only for Pencipta Lagu) */}
-          {contractData?.jenisKontrak === 'pencipta' && (
-            <div className="form-section card mb-6 mt-6">
-              <div className="form-section-header">
-                <div>
-                  <h3>2. Objek Perjanjian (Lagu)</h3>
-                  <p>Isi informasi detail mengenai lagu yang diserahkan</p>
-                </div>
+          {/* SECTION FOR SONG DETAILS */}
+          <div className="form-section card mb-6 mt-6">
+            <div className="form-section-header">
+              <div>
+                <h3>2. Objek Perjanjian (Lagu)</h3>
+                <p>{contractData?.jenisKontrak === 'pencipta' ? 'Isi informasi detail mengenai lagu yang diserahkan' : 'Pilih lagu yang akan dibawakan oleh artis'}</p>
               </div>
-              
-              <div className="form-row grid-cols-2 gap-6">
-                <div className="form-group">
-                  <label>Judul Lagu <span className="text-danger">*</span></label>
+            </div>
+            
+            <div className="form-row grid-cols-2 gap-6">
+              <div className="form-group">
+                <label>Judul Lagu <span className="text-danger">*</span></label>
+                {contractData?.jenisKontrak === 'pencipta' ? (
                   <input type="text" name="lagu_judul" value={contractData?.lagu_judul || ''} onChange={handleChange} className="form-control" placeholder="Contoh: Sang Dewi" />
-                </div>
-                <div className="form-group">
-                  <label>Genre <span className="text-danger">*</span></label>
-                  <input type="text" name="lagu_genre" value={contractData?.lagu_genre || ''} onChange={handleChange} className="form-control" placeholder="Pop, Rock, R&B, dll" />
-                </div>
+                ) : (
+                  <select 
+                    name="lagu_judul" 
+                    value={contractData?.lagu_judul || ''} 
+                    onChange={(e) => {
+                      const selectedLagu = e.target.value;
+                      const relatedPenciptaContract = db?.kontrak?.find(k => k.jenisKontrak === 'pencipta' && k.lagu_judul === selectedLagu);
+                      
+                      setContractData(prev => ({
+                        ...prev,
+                        lagu_judul: selectedLagu,
+                        lagu_genre: relatedPenciptaContract?.lagu_genre || prev.lagu_genre || '',
+                        lagu_durasi: relatedPenciptaContract?.lagu_durasi || prev.lagu_durasi || ''
+                      }));
+                    }}
+                    className="form-control"
+                  >
+                    <option value="" disabled>Pilih lagu dari pencipta</option>
+                    {Object.entries(penciptaSongs).map(([penciptaName, songsSet]) => (
+                      <optgroup key={penciptaName} label={penciptaName}>
+                        {Array.from(songsSet).map(lagu => (
+                          <option key={lagu} value={lagu}>{lagu}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                )}
               </div>
+              <div className="form-group">
+                <label>Genre <span className="text-danger">*</span></label>
+                <input 
+                  type="text" 
+                  name="lagu_genre" 
+                  value={contractData?.lagu_genre || ''} 
+                  onChange={handleChange} 
+                  className="form-control" 
+                  placeholder="Pop, Rock, R&B, dll" 
+                  disabled={contractData?.jenisKontrak !== 'pencipta'} 
+                />
+              </div>
+            </div>
 
-              <div className="form-row grid-cols-2 gap-6 mt-4">
-                <div className="form-group">
-                  <label>Durasi <span className="text-danger">*</span></label>
-                  <input type="text" name="lagu_durasi" value={contractData?.lagu_durasi || ''} onChange={handleChange} className="form-control" placeholder="e.g. 03:45" />
-                </div>
+            <div className="form-row grid-cols-2 gap-6 mt-4">
+              <div className="form-group">
+                <label>Durasi <span className="text-danger">*</span></label>
+                <input 
+                  type="text" 
+                  name="lagu_durasi" 
+                  value={contractData?.lagu_durasi || ''} 
+                  onChange={handleChange} 
+                  className="form-control" 
+                  placeholder="e.g. 03:45" 
+                  disabled={contractData?.jenisKontrak !== 'pencipta'} 
+                />
+              </div>
+              {contractData?.jenisKontrak === 'pencipta' && (
                 <div className="form-group">
                   <label>Tanggal Penyerahan <span className="text-danger">*</span></label>
                   <input type="text" name="lagu_tanggalPenyerahan" value={contractData?.lagu_tanggalPenyerahan || ''} onChange={handleChange} className="form-control" placeholder="e.g. 04 Juli 2025" />
                 </div>
-              </div>
+              )}
             </div>
-          )}
+          </div>
  
           {/* SECTION 3: Dokumentasi */}
           <div id="section-3" className="form-section card mb-6 mt-6">
             <div className="form-section-header">
               <div>
-                <h3>{contractData?.jenisKontrak === 'pencipta' ? '3' : '2'}. Informasi Dokumen & Tanggal</h3>
+                <h3>3. Informasi Dokumen & Tanggal</h3>
                 <p>Isi informasi penanggalan untuk dokumen kontrak</p>
               </div>
             </div>
@@ -664,7 +747,7 @@ export default function KontrakBaru({ onBack, contractData, setContractData, db,
             
             <div className="form-row grid-cols-2">
               <div className="form-group">
-                <label>Persentase MUSIORA (%) <span className="text-danger">*</span></label>
+                <label>Persentase {contractData?.pihak1_perusahaan || 'MYD RECORDS'} (%) <span className="text-danger">*</span></label>
                 <select name="persentaseLabel" value={contractData?.persentaseLabel || ''} onChange={(e) => {
                   const val = e.target.value;
                   setContractData(prev => ({ ...prev, persentaseLabel: val, persentasePihakKedua: val ? 100 - parseInt(val) : '' }));

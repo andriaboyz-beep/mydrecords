@@ -56,6 +56,7 @@ const mapToDB = (table, data) => {
     delete dbData.atasNama;
     delete dbData.ktpFile;
     delete dbData.fotoProfile;
+    delete dbData.status;
   }
   if (table === 'kontrak') {
     dbData.pihak1_nama = data.pihak1_wakil || '';

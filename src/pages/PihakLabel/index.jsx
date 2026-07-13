@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Briefcase, Plus, Minus, Search, MoreVertical, Building } from 'lucide-react';
+import { Briefcase, Plus, Minus, Search, MoreVertical, Building, X, Trash2 } from 'lucide-react';
 
 export default function PihakLabel({ db, setDb, user, activeWorkspace }) {
   const [showForm, setShowForm] = useState(false);
@@ -153,37 +153,12 @@ export default function PihakLabel({ db, setDb, user, activeWorkspace }) {
         {displayedLabels.map(label => (
           <div key={label.id} className="card p-5 relative group">
             <button 
-              className="absolute top-4 right-4 transition-colors" 
-              style={{ color: 'var(--text-muted)' }}
-              onClick={() => setActiveMenu(activeMenu === label.id ? null : label.id)}
+              onClick={() => setDeleteConfirmId(label.id)}
+              style={{ position: 'absolute', top: '12px', right: '12px', backgroundColor: '#fee2e2', color: '#ef4444', padding: '8px', borderRadius: '50%', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+              title="Hapus"
             >
-              <MoreVertical size={20} />
+              <Trash2 size={18} />
             </button>
-
-            {activeMenu === label.id && (
-              <div 
-                className="absolute top-12 right-4 rounded-lg shadow-lg py-2 z-20 card border-0"
-                style={{ minWidth: '150px' }}
-              >
-                <button 
-                  className="w-full text-left px-4 py-2 text-sm transition-colors"
-                  style={{ color: 'var(--text-main)' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(128,128,128,0.1)'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                  onClick={() => handleEdit(label)}
-                >
-                  Edit Data
-                </button>
-                <button 
-                  className="w-full text-left px-4 py-2 text-sm transition-colors text-red-500"
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.1)'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                  onClick={() => handleDelete(label.id)}
-                >
-                  Hapus
-                </button>
-              </div>
-            )}
 
             <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa' }}>
               <Building size={24} />
@@ -202,26 +177,37 @@ export default function PihakLabel({ db, setDb, user, activeWorkspace }) {
       </div>
 
       {deleteConfirmId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="card max-w-sm w-full p-6 text-center">
-            <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-main)' }}>Konfirmasi Hapus</h3>
-            <p className="mb-6" style={{ color: 'var(--text-muted)' }}>
-              Apakah Anda yakin ingin menghapus data mitra ini? Data yang dihapus tidak dapat dikembalikan.
-            </p>
-            <div className="flex gap-3 justify-center">
+        <div className="success-modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="success-modal-content" style={{ maxWidth: '280px' }}>
+            <div className="success-modal-header">
+              <div className="success-modal-icon-container">
+                <div className="success-modal-icon" style={{ backgroundColor: '#ef4444' }}>
+                  <X size={24} strokeWidth={4} />
+                </div>
+              </div>
+            </div>
+            
+            <div className="success-modal-body">
+              <h2 className="success-modal-title">Konfirmasi</h2>
+              <p className="success-modal-text">
+                Apakah Anda yakin ingin menghapus data mitra ini?
+              </p>
+            </div>
+            
+            <div style={{ display: 'flex', width: '100%' }}>
               <button 
-                className="btn btn-outline"
-                style={{ borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}
+                style={{ flex: 1, backgroundColor: '#9ca3af', color: 'white', borderRight: '1px solid rgba(255,255,255,0.2)' }}
+                className="success-modal-btn"
                 onClick={() => setDeleteConfirmId(null)}
               >
                 Batal
               </button>
               <button 
-                className="btn text-white px-6 py-2 rounded-lg"
-                style={{ backgroundColor: '#ef4444' }}
+                style={{ flex: 1, backgroundColor: '#ef4444', color: 'white' }}
+                className="success-modal-btn"
                 onClick={confirmDelete}
               >
-                Ya, Hapus
+                Hapus
               </button>
             </div>
           </div>

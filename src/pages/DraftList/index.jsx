@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileEdit, Trash2, Search, ArrowLeft } from 'lucide-react';
+import { FileEdit, Trash2, Search, ArrowLeft, X } from 'lucide-react';
 
 export default function DraftList({ db, setDb, onEditDraft, onBack }) {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -75,41 +75,59 @@ export default function DraftList({ db, setDb, onEditDraft, onBack }) {
                     <FileEdit size={16} /> Lanjutkan Edit
                   </button>
                   
-                  {confirmDeleteId === draft.id ? (
-                    <div className="flex items-center gap-2 bg-red-50 p-1 rounded-md border border-red-100">
-                      <span className="text-sm font-medium text-red-600 px-2">Yakin hapus?</span>
-                      <button 
-                        type="button"
-                        className="btn btn-outline border-red-300 text-white bg-red-600 hover:bg-red-700 px-3 py-1"
-                        onClick={() => handleDelete(draft.id)}
-                      >
-                        Ya
-                      </button>
-                      <button 
-                        type="button"
-                        className="btn btn-outline px-3 py-1"
-                        style={{ borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}
-                        onClick={() => setConfirmDeleteId(null)}
-                      >
-                        Batal
-                      </button>
-                    </div>
-                  ) : (
-                    <button 
-                      type="button"
-                      className="btn btn-outline border-red-200 text-red-600 hover:bg-red-50"
-                      onClick={() => setConfirmDeleteId(draft.id)}
-                      title="Hapus Draft"
-                    >
-                      <Trash2 size={16} /> Hapus
-                    </button>
-                  )}
+                  <button 
+                    type="button"
+                    className="btn btn-outline border-red-200 text-red-600 hover:bg-red-50"
+                    onClick={() => setConfirmDeleteId(draft.id)}
+                    title="Hapus Draft"
+                  >
+                    <Trash2 size={16} /> Hapus
+                  </button>
                 </div>
               </div>
             ))
           )}
         </div>
       </div>
+
+      {/* Delete Confirm Modal */}
+      {confirmDeleteId && (
+        <div className="success-modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="success-modal-content" style={{ maxWidth: '280px' }}>
+            <div className="success-modal-header">
+              <div className="success-modal-icon-container">
+                <div className="success-modal-icon" style={{ backgroundColor: '#ef4444' }}>
+                  <X size={24} strokeWidth={4} />
+                </div>
+              </div>
+            </div>
+            
+            <div className="success-modal-body">
+              <h2 className="success-modal-title">Konfirmasi</h2>
+              <p className="success-modal-text">
+                Apakah Anda yakin ingin menghapus draft kontrak ini?
+              </p>
+            </div>
+            
+            <div style={{ display: 'flex', width: '100%' }}>
+              <button 
+                style={{ flex: 1, backgroundColor: '#9ca3af', color: 'white', borderRight: '1px solid rgba(255,255,255,0.2)' }}
+                className="success-modal-btn"
+                onClick={() => setConfirmDeleteId(null)}
+              >
+                Batal
+              </button>
+              <button 
+                style={{ flex: 1, backgroundColor: '#ef4444', color: 'white' }}
+                className="success-modal-btn"
+                onClick={() => handleDelete(confirmDeleteId)}
+              >
+                Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

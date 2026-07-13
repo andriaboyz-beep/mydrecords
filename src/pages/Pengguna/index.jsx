@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserCog, Plus, Minus, Search, ShieldCheck } from 'lucide-react';
+import { UserCog, Plus, Minus, Search, ShieldCheck, X } from 'lucide-react';
 
 const dummyUsers = [
   { id: 'usr-1', name: 'Andi Pratama', email: 'andi@mydrecords.com', role: 'Administrator', status: 'Aktif', avatar: 'https://ui-avatars.com/api/?name=Andi+Pratama&background=6366f1&color=fff' },
@@ -202,29 +202,12 @@ export default function Pengguna({ db, setDb }) {
                     >
                       Edit Akses
                     </button>
-                    {confirmDeleteId === user.id ? (
-                      <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => handleDelete(user.id)}
-                          className="text-red-600 hover:text-red-800 text-sm font-bold transition-colors"
-                        >
-                          Yakin Hapus?
-                        </button>
-                        <button 
-                          onClick={() => setConfirmDeleteId(null)}
-                          className="text-gray-500 hover:text-gray-700 text-sm font-bold transition-colors"
-                        >
-                          Batal
-                        </button>
-                      </div>
-                    ) : (
-                      <button 
-                        onClick={() => setConfirmDeleteId(user.id)}
-                        className="text-red-500 hover:text-red-700 text-sm font-bold transition-colors"
-                      >
-                        Hapus
-                      </button>
-                    )}
+                    <button 
+                      onClick={() => setConfirmDeleteId(user.id)}
+                      className="text-red-500 hover:text-red-700 text-sm font-bold transition-colors"
+                    >
+                      Hapus
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -232,6 +215,45 @@ export default function Pengguna({ db, setDb }) {
           </tbody>
         </table>
       </div>
+
+      {/* Delete Confirm Modal */}
+      {confirmDeleteId && (
+        <div className="success-modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="success-modal-content" style={{ maxWidth: '280px' }}>
+            <div className="success-modal-header">
+              <div className="success-modal-icon-container">
+                <div className="success-modal-icon" style={{ backgroundColor: '#ef4444' }}>
+                  <X size={24} strokeWidth={4} />
+                </div>
+              </div>
+            </div>
+            
+            <div className="success-modal-body">
+              <h2 className="success-modal-title">Konfirmasi</h2>
+              <p className="success-modal-text">
+                Apakah Anda yakin ingin menghapus pengguna ini?
+              </p>
+            </div>
+            
+            <div style={{ display: 'flex', width: '100%' }}>
+              <button 
+                style={{ flex: 1, backgroundColor: '#9ca3af', color: 'white', borderRight: '1px solid rgba(255,255,255,0.2)' }}
+                className="success-modal-btn"
+                onClick={() => setConfirmDeleteId(null)}
+              >
+                Batal
+              </button>
+              <button 
+                style={{ flex: 1, backgroundColor: '#ef4444', color: 'white' }}
+                className="success-modal-btn"
+                onClick={() => handleDelete(confirmDeleteId)}
+              >
+                Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

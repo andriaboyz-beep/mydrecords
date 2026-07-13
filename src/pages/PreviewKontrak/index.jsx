@@ -183,7 +183,7 @@ export default function PreviewKontrak({ onBack, contractData = {}, db, setDb, u
                   className="text-center font-bold mb-2 leading-tight text-[12pt]" 
                   style={{ textAlign: 'center', fontWeight: 700 }}
                 >
-                  {contractData?.pihak1_perusahaan || 'MUSIORA'}
+                  {contractData?.pihak1_perusahaan || 'MYD RECORDS'}
                 </h2>
                 
                 <div className="text-center mb-8" style={{ textAlign: 'center' }}>
@@ -197,7 +197,7 @@ export default function PreviewKontrak({ onBack, contractData = {}, db, setDb, u
                 </p>
 
                 <h3 className="font-bold text-[12pt] mt-6 mb-2">PIHAK PERTAMA</h3>
-                <p className="font-bold mb-2">{contractData?.pihak1_perusahaan || 'MUSIORA'}</p>
+                <p className="font-bold mb-2">{contractData?.pihak1_perusahaan || 'MYD RECORDS'}</p>
                 <table className="mb-4" style={{ width: '100%', lineHeight: '1.6' }}>
                   <tbody>
                     <tr>
@@ -353,7 +353,7 @@ export default function PreviewKontrak({ onBack, contractData = {}, db, setDb, u
                   <LItem num="2">
                     Setelah seluruh biaya tertutup, pembagian pendapatan bersih adalah:
                     <div className="font-bold my-2 ml-4">
-                      <p>MUSIORA : {contractData?.persentaseLabel || 90}%</p>
+                      <p>{contractData?.pihak1_perusahaan || 'MYD RECORDS'} : {contractData?.persentaseLabel || 90}%</p>
                       <p>PENCIPTA LAGU : {contractData?.persentasePihakKedua || 10}%</p>
                     </div>
                   </LItem>
@@ -428,7 +428,7 @@ export default function PreviewKontrak({ onBack, contractData = {}, db, setDb, u
 
                   <Pasal num="17" title="PENYELESAIAN PERSELISIHAN" />
                   <LItem num="1">Setiap perselisihan diselesaikan terlebih dahulu melalui musyawarah.</LItem>
-                  <LItem num="2">Apabila tidak tercapai kesepakatan, penyelesaian dilakukan melalui Pengadilan Negeri yang disepakati para pihak sesuai domisili hukum MUSIORA.</LItem>
+                  <LItem num="2">Apabila tidak tercapai kesepakatan, penyelesaian dilakukan melalui Pengadilan Negeri yang disepakati para pihak sesuai domisili hukum {contractData?.pihak1_perusahaan || 'MYD RECORDS'}.</LItem>
 
                   <Pasal num="18" title="PENUTUP" />
                   <LItem num="1">Perjanjian ini dibuat dalam keadaan sadar, tanpa paksaan, dan mempunyai kekuatan hukum yang sama bagi kedua belah pihak.</LItem>
@@ -442,7 +442,7 @@ export default function PreviewKontrak({ onBack, contractData = {}, db, setDb, u
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '64px' }}>
                       <div style={{ width: '45%', textAlign: 'center' }}>
                         <p style={{ fontWeight: 'bold' }}>PIHAK PERTAMA</p>
-                        <p style={{ fontWeight: 'bold' }}>{contractData?.pihak1_perusahaan || 'MUSIORA'}</p>
+                        <p style={{ fontWeight: 'bold' }}>{contractData?.pihak1_perusahaan || 'MYD RECORDS'}</p>
                         <p style={{ fontSize: '9pt', color: '#666', marginTop: '16px', marginBottom: '0px' }}>Materai Rp10.000</p>
                         <SignHint />
                         <p style={{ fontWeight: 'bold', textDecoration: 'underline' }}>{contractData?.pihak1_wakil || 'Yadi Supriyadi'}</p>
@@ -514,7 +514,7 @@ export default function PreviewKontrak({ onBack, contractData = {}, db, setDb, u
                     <tr>
                       <td colSpan="2" style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid black', lineHeight: '1.5' }}>
                         dalam perbuatan hukum ini secara sah bertindak untuk dan <span style={{ color: 'blue', textDecoration: 'underline' }}>atas nama</span> perusahaan<br/>
-                        <strong>{contractData?.pihak1_perusahaan || 'MUSIORA'}</strong>
+                        <strong>{contractData?.pihak1_perusahaan || 'MYD RECORDS'}</strong>
                       </td>
                     </tr>
                     <tr>
@@ -747,7 +747,7 @@ export default function PreviewKontrak({ onBack, contractData = {}, db, setDb, u
                   <LItem num="2">Selain ketentuan dimaksud pasal 13 ayat 1 diatas, <strong>ARTIS</strong> dianggap telah melakukan pelanggaran terhadap <strong>PERJANJIAN</strong> ini apabila melalaikan salah satu saja dari pernyataan-pernyataan dan jaminannya, kewajiban-kewajiban dan hak eksklusif yang sudah diberikan kepada <strong>PRODUSER EKSEKUTIF</strong> sesuai didalam <strong>PERJANJIAN</strong> ini. Karenanya tanpa diperlukan ketetapan atau keputusan dari pengadilan, <strong>PRODUSER EKSEKUTIF</strong> berhak untuk menentukan sangsi-sangsi dan ganti rugi dan meminta pengembalian pembayaran-pembayaran yang sudah dilakukan kepada <strong>ARTIS</strong>, yang kesemuanya dapat dilakukan tanpa adanya somasi terlebih dahulu.</LItem>
                   <LItem num="3">Jika kemampuan <strong>ARTIS</strong> dalam melakukan penampilan mengalami penurunan secara jasmani maupun rohani, atau <strong>ARTIS</strong> dengan sengaja mengabaikan, menolak, serta menggagalkan semua bentuk kewajiban <strong>ARTIS</strong> sebagaimana yang dimaksud dalam <strong>PERJANJIAN</strong> ini, termasuk didalamnya jika terjadi pengunduran diri satu orang atau beberapa anggota atau pembubaran grup band yang diwakili <strong>ARTIS</strong> dalam <strong>PERJANJIAN</strong> ini, maka <strong>PRODUSER EKSEKUTIF</strong> disamping memiliki hak-hak untuk melakukan penangguhan dan lain-lain penyelesaian, mempunyai hak sepenuhnya untuk membatalkan <strong>PERJANJIAN</strong> ini secara tertulis. Dalam hal terjadi pembubaran group Band maka dengan sendirinya <strong>PRODUSER EKSEKUTIF</strong> memiliki hak sepenuhnya atas penggunaan nama <strong>ARTIS</strong> untuk album rekaman yang dibuat berdasarkan <strong>PERJANJIAN</strong> ini, dan mempunyai hak opsi untuk membuat <strong>PERJANJIAN</strong> baru dengan <strong>ARTIS</strong> yang mengikat nama baru dan perubahan personil yang dilakukan <strong>ARTIS</strong> setelah pembubaran group, sebagaimana diatur dalam ketentuan mengenai hak opsi dalam pasal 10 <strong>PERJANJIAN</strong> ini.</LItem>
                   <LItem num="4">Disepakati oleh <strong>PARA PIHAK</strong> bahwa <strong>PRODUSER EKSEKUTIF</strong> tidak memiliki kewajiban dalam bentuk apapun kepada <strong>ARTIS</strong> apabila album/single rekaman suara yang dihasilkan berdasarkan kerjasama dalam <strong>PERJANJIAN</strong> ini tidak berhasil di pasaran / tidak laku.</LItem>
-                  <LItem num="5"><strong>PRODUSER EKSEKUTIF</strong> mempunyai hak untuk mengakhiri atau membatalkan <strong>PERJANJIAN</strong> ini atas alasan apapun dengan jangka waktu 1 (satu) bulan untuk menyampaikan pembatalan secara tertulis kepada <strong>ARTIS</strong>. Atas pembatalan tersebut <strong>PRODUSER EKSEKUTIF</strong> tidak lagi mempunyai berbagai kewajiban sebagaimana diatur dalam <strong>PERJANJIAN</strong> ini, kecuali kewajiban untuk membayar semua bentuk royalti kepada <strong>ARTIS</strong> sebagaimana diatur dalam pasal 7 <strong>PERJANJIAN</strong> ini atas setiap single/album yang diedarkan MUSIORA.</LItem>
+                  <LItem num="5"><strong>PRODUSER EKSEKUTIF</strong> mempunyai hak untuk mengakhiri atau membatalkan <strong>PERJANJIAN</strong> ini atas alasan apapun dengan jangka waktu 1 (satu) bulan untuk menyampaikan pembatalan secara tertulis kepada <strong>ARTIS</strong>. Atas pembatalan tersebut <strong>PRODUSER EKSEKUTIF</strong> tidak lagi mempunyai berbagai kewajiban sebagaimana diatur dalam <strong>PERJANJIAN</strong> ini, kecuali kewajiban untuk membayar semua bentuk royalti kepada <strong>ARTIS</strong> sebagaimana diatur dalam pasal 7 <strong>PERJANJIAN</strong> ini atas setiap single/album yang diedarkan {contractData?.pihak1_perusahaan || 'MYD RECORDS'}.</LItem>
                   <LItem num="6">Pembatalan <strong>PERJANJIAN</strong> sebagaimana yang dimaksud dalam ayat 5 diatas tidak mengurangi kepemilikan hak <strong>PRODUSER EKSEKUTIF</strong> atas Master rekaman suara yang dibuat berdasarkan <strong>PERJANJIAN</strong> ini yang telah selesai dikerjakan.</LItem>
                   <LItem num="7">Untuk maksud pelaksanaan ketentuan ayat 5 dan 6 diatas <strong>PARA PIHAK</strong> sepakat untuk mengesampingkan pelaksanaan ketentuan pasal 1266 dan 1267 KUH Perdata sepanjang diperlukannya putusan pengadilan untuk pengakhiran suatu <strong>PERJANJIAN</strong>.</LItem>
     

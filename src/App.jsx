@@ -74,13 +74,66 @@ const initialContractData = {
   saksi2: ''
 };
 
+const urlToMenuMap = {
+  '/Dashboard/': 'dashboard',
+  '/Dashboard': 'dashboard',
+  '/KontrakBaru/': 'kontrak',
+  '/KontrakBaru': 'kontrak',
+  '/Draft/': 'draft',
+  '/Draft': 'draft',
+  '/DaftarKontrak/': 'list_kontrak_semua',
+  '/DaftarKontrak': 'list_kontrak_semua',
+  '/Artis/': 'artis',
+  '/Artis': 'artis',
+  '/Pencipta/': 'pencipta',
+  '/Pencipta': 'pencipta',
+  '/Lagu/': 'lagu',
+  '/Lagu': 'lagu',
+  '/Label/': 'pihak-label',
+  '/Label': 'pihak-label',
+  '/Template/': 'template',
+  '/Template': 'template',
+  '/Laporan/': 'laporan',
+  '/Laporan': 'laporan',
+  '/Pengingat/': 'pengingat',
+  '/Pengingat': 'pengingat',
+  '/Pengaturan/': 'pengaturan',
+  '/Pengaturan': 'pengaturan',
+  '/Pengguna/': 'pengguna',
+  '/Pengguna': 'pengguna',
+  '/PreviewKontrak/': 'preview-kontrak',
+  '/PreviewKontrak': 'preview-kontrak'
+};
+
+const menuToUrlMap = {
+  'dashboard': '/Dashboard/',
+  'kontrak': '/KontrakBaru/',
+  'draft': '/Draft/',
+  'list_kontrak_semua': '/DaftarKontrak/',
+  'list_kontrak_aktif': '/DaftarKontrak/',
+  'list_kontrak_berakhir': '/DaftarKontrak/',
+  'artis': '/Artis/',
+  'pencipta': '/Pencipta/',
+  'lagu': '/Lagu/',
+  'pihak-label': '/Label/',
+  'template': '/Template/',
+  'laporan': '/Laporan/',
+  'pengingat': '/Pengingat/',
+  'pengaturan': '/Pengaturan/',
+  'pengguna': '/Pengguna/',
+  'superadmin': '/Dashboard/',
+  'preview-kontrak': '/PreviewKontrak/'
+};
+
 function App() {
   const [currentUser, setCurrentUser] = useState(() => {
     const savedUser = localStorage.getItem('kontrakku_user');
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  const [activeMenu, setActiveMenu] = useState('dashboard');
+  const [activeMenu, setActiveMenu] = useState(() => {
+    return urlToMenuMap[window.location.pathname] || 'dashboard';
+  });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarOpenMobile, setSidebarOpenMobile] = useState(false);
   
@@ -133,6 +186,13 @@ function App() {
         setIsLoading(false);
       });
     });
+
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      setActiveMenu(urlToMenuMap[path] || 'dashboard');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   // Active Workspace State
@@ -229,6 +289,12 @@ function App() {
       setContractData(initialContractData);
     }
     setActiveMenu(menu);
+
+    const newUrl = menuToUrlMap[menu] || `/${menu}/`;
+    if (window.location.pathname !== newUrl) {
+      window.history.pushState(null, '', newUrl);
+    }
+
     logActivity(currentUser, 'Navigasi', `Membuka halaman ${menu}`);
   };
 

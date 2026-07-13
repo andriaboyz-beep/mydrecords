@@ -162,7 +162,7 @@ function createTables() {
     const ktpColumns = [
       'tempatLahir', 'tanggalLahir', 'jenisKelamin', 'golonganDarah',
       'rtRw', 'kelDesa', 'kecamatan', 'agama', 'statusPerkawinan',
-      'pekerjaan', 'kewarganegaraan'
+      'pekerjaan', 'kewarganegaraan', 'bank', 'bankAccount', 'bankName'
     ];
     
     ['artis', 'pencipta'].forEach(tableName => {
